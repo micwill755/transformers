@@ -27,8 +27,8 @@ try:
         stoi = { ch:i for i, ch in enumerate(chars) }
         itos = { i:ch for i, ch in enumerate(chars) }
         encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
-        decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
-
+        decode = lambda l: ''.join([itos[i] for i in l]) if len(l) > 1 else ''.join([itos[l[0]]]) # decoder: take a list of integers, output a string
+        
         #print(encode("hii there"))
         #print(decode(encode("hii there")))
 
@@ -46,6 +46,7 @@ try:
         #print(n, decode(val_data.numpy()))
 
         block_size = 8
+        # in a chunk of 9 characters there is 8 examples
         train_data[:block_size + 1]
 
         x = train_data[:block_size]
@@ -55,8 +56,11 @@ try:
             context = x[:t+1]
             target = y[t]
             print(f"when input is {context} the target: {target}")
+            '''d = decode(context.numpy())
+            tar_char = target.item()
+            print(f"when input is {d} the target: {itos[tar_char]}")'''
 
-        '''torch.manual_seed(1337)
+        torch.manual_seed(1337)
         batch_size = 4 # how many independent sequences will we process in parallel?
         block_size = 8 # what is the maximum context length for predictions?
 
@@ -86,49 +90,49 @@ try:
 
         torch.manual_seed(1337)
 
-        class BigramLanguageModel(nn.Module):
+    class BigramLanguageModel(nn.Module):
 
-            def __init__(self, vocab_size):
-                super().__init__()
-                # each token directly reads off the logits for the next token from a lookup table
-                self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
+        def __init__(self, vocab_size):
+            super().__init__()
+            # each token directly reads off the logits for the next token from a lookup table
+            self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
 
-            def forward(self, idx, targets=None):
+        def forward(self, idx, targets=None):
 
-                # idx and targets are both (B,T) tensor of integers
-                logits = self.token_embedding_table(idx) # (B,T,C)
+            # idx and targets are both (B,T) tensor of integers
+            logits = self.token_embedding_table(idx) # (B,T,C)
 
-                if targets is None:
-                    loss = None
-                else:
-                    B, T, C = logits.shape
-                    logits = logits.view(B*T, C)
-                    targets = targets.view(B*T)
-                    loss = F.cross_entropy(logits, targets)
+            if targets is None:
+                loss = None
+            else:
+                B, T, C = logits.shape
+                logits = logits.view(B*T, C)
+                targets = targets.view(B*T)
+                loss = F.cross_entropy(logits, targets)
 
-                return logits, loss
+            return logits, loss
 
-            def generate(self, idx, max_new_tokens):
-                # idx is (B, T) array of indices in the current context
-                for _ in range(max_new_tokens):
-                    # get the predictions
-                    logits, loss = self(idx)
-                    # focus only on the last time step
-                    logits = logits[:, -1, :] # becomes (B, C)
-                    # apply softmax to get probabilities
-                    probs = F.softmax(logits, dim=-1) # (B, C)
-                    # sample from the distribution
-                    idx_next = torch.multinomial(probs, num_samples=1) # (B, 1)
-                    # append sampled index to the running sequence
-                    idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)
-                return idx
+        def generate(self, idx, max_new_tokens):
+            # idx is (B, T) array of indices in the current context
+            for _ in range(max_new_tokens):
+                # get the predictions
+                logits, loss = self(idx)
+                # focus only on the last time step
+                logits = logits[:, -1, :] # becomes (B, C)
+                # apply softmax to get probabilities
+                probs = F.softmax(logits, dim=-1) # (B, C)
+                # sample from the distribution
+                idx_next = torch.multinomial(probs, num_samples=1) # (B, 1)
+                # append sampled index to the running sequence
+                idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)
+            return idx
 
-        m = BigramLanguageModel(vocab_size)
-        logits, loss = m(xb, yb)
-        print(logits.shape)
-        print(loss)
+    m = BigramLanguageModel(vocab_size)
+    logits, loss = m(xb, yb)
+    print(logits.shape)
+    print(loss)
 
-        print(decode(m.generate(idx = torch.zeros((1, 1), dtype=torch.long), max_new_tokens=100)[0].tolist()))'''
+    print(decode(m.generate(idx = torch.zeros((1, 1), dtype=torch.long), max_new_tokens=100)[0].tolist()))
 
 except Exception as e:
     print(f"An error occurred: {e}")
